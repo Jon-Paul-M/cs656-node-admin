@@ -30,13 +30,27 @@ admin.initializeApp({
 //    console.log("Error updating user:", error);
 //  });
 
+var db = admin.database();
+var ref = db.ref();
 
 function listAllUsers(nextPageToken) {
   // List batch of users, 1000 at a time.
+  var usersRef = ref.child("users");
   admin.auth().listUsers(1000, nextPageToken)
     .then(function(listUsersResult) {
       listUsersResult.users.forEach(function(userRecord) {
         console.log("user", userRecord.toJSON());
+        usersRef.child(userRecord.uid).set({
+          uid: userRecord.uid,
+          displayName: userRecord.displayName,
+          email: userRecord.email,
+          creationTime: userRecord.metadata.creationTime
+        });
+        if (userRecord.metadata != null && userRecord.metadata.lastSignInTime != null) {
+          usersRef.child(userRecord.uid).update({
+            lastSignInTime: userRecord.metadata.lastSignInTime
+          });
+        }
       });
       if (listUsersResult.pageToken) {
         // List next batch of users.
